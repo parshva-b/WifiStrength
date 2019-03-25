@@ -2,16 +2,20 @@ package com.example.wifistrength;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.method.ScrollingMovementMethod;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,12 +37,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        TextView display = findViewById(R.id.display);
-        display.setMovementMethod(new ScrollingMovementMethod());
-//        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),"logcat.txt");
-//        if(!file.exists()) {
-//            file.mkdir();
-//        }
         File temp = new File(getFilesDir() + "/"+FILE_NAME);
         if (temp.exists()) {
             RandomAccessFile raf = null;
@@ -70,26 +69,14 @@ public class MainActivity extends AppCompatActivity {
     public void display(View view) {
         File file = new File(Environment.getExternalStorageDirectory(),FILE_NAME);
 
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            InputStreamReader isr = new InputStreamReader(fis);
-            BufferedReader br = new BufferedReader(isr);
-            StringBuilder s = new StringBuilder();
-            String text;
+        Uri selectedUri = Uri.parse(file.getAbsolutePath());
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(selectedUri, "text/csv");
 
-            while((text = br.readLine())!=null) {
-                s.append(text).append("\n");
-            }
-
-            TextView tv = findViewById(R.id.display);
-            tv.setText(s.toString());
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (intent.resolveActivityInfo(getPackageManager(), 0) != null)
+        {
+            startActivity(intent);
         }
-
     }
 
     public void compute(View view) {
@@ -103,9 +90,14 @@ public class MainActivity extends AppCompatActivity {
         s.append("Link name: "+wifiInfo.getSSID()+"\n");
         s.append("Link Speed: "+wifiInfo.getLinkSpeed()+" Mbps\n");
         s.append("MAC address: "+wifiInfo.getMacAddress()+"\n");
+        int ip = wifiInfo.getIpAddress();
+        String ipAddress = Formatter.formatIpAddress(ip);
+        s.append("IP address: "+ipAddress+"\n");
+        int level = WifiManager.calculateSignalLevel(wifiInfo.getRssi(),5);
+        s.append("WiFi Strength level: "+level+"\n");
 
         TextView ans = (TextView) findViewById(R.id.result);
-        Log.v("Wifi", s.toString());
+//        Log.v("Wifi", s.toString());
         ans.setText(s.toString());
 
         if(isExternalStorageWritable() && checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
@@ -115,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 FileOutputStream fos = new FileOutputStream(file);
 
-                int level =0;
+                level =0;
                 StringBuilder log = new StringBuilder();
 
                 for(int i=0;i<60;i++) {
@@ -139,6 +131,30 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             Toast.makeText(this,"Cannot perform write operation, Permission denied",Toast.LENGTH_LONG).show();
+        }
+
+        File file = new File(Environment.getExternalStorageDirectory(),FILE_NAME);
+
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader br = new BufferedReader(isr);
+            ArrayList<String> disp = new ArrayList<String>();
+            String text;
+
+            while((text = br.readLine())!=null) {
+                disp.add(text);
+            }
+
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(getApplicationContext(),android.R.layout.simple_list_item_1, disp);
+            ListView listView = (ListView) findViewById(R.id.display);
+            listView.setAdapter(adapter);
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

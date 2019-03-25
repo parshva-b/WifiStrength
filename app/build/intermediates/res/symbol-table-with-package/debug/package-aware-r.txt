@@ -706,7 +706,6 @@ id expanded_menu
 id fill
 id fill_horizontal
 id fill_vertical
-id focus
 id forever
 id gone
 id group_divider
