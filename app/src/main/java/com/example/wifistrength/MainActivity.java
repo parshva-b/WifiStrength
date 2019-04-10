@@ -77,6 +77,31 @@ public class MainActivity extends AppCompatActivity {
         {
             startActivity(intent);
         }
+        else {
+            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+            i.setType("text/csv");
+            startActivityForResult(intent, 7);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO Auto-generated method stub
+
+        switch(requestCode){
+
+            case 7:
+
+                if(resultCode==RESULT_OK){
+
+                    String PathHolder = data.getData().getPath();
+
+                    Toast.makeText(this, PathHolder , Toast.LENGTH_LONG).show();
+
+                }
+                break;
+
+        }
     }
 
     public void compute(View view) {
@@ -113,7 +138,8 @@ public class MainActivity extends AppCompatActivity {
                 for(int i=0;i<60;i++) {
                     wifiInfo = wifiManager.getConnectionInfo();
                     level = wifiInfo.getRssi();
-                    log.append(String.valueOf(level)+" dbm\n");
+                    log.append(String.valueOf(level)+" dbm\t");
+                    log.append("at time: "+String.valueOf(System.currentTimeMillis())+"\n");
                     Thread.sleep(100);
                 }
                 fos.write(log.toString().getBytes());
